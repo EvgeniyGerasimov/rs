@@ -1,0 +1,142 @@
+swagger: '2.0'
+info:
+  description: >-
+    Recommendation system API for motorsport.com (Global Edition)
+  version: 0.1.0
+  title: recoMSN api
+host: https://lab.motorsportnetwork.com
+tags:
+  - name: main
+schemes:
+  - https
+paths:
+  /recommend:
+    post:
+      tags:
+      - "main"
+      summary: "Return N (default: 5) recommended article_idition_id's"
+      description: "Firstly, perform computations to get a list of recommendations. Store it in Redis. Secondary, show top N (default: 5) recommended article_idition_id's excluding user view history"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: body
+        name: Input
+        description: clientId as same as in Google Analitics, article_edition_id from news url
+        schema:
+          $ref: "#/definitions/Input"
+      responses:
+        201:
+          description: "Return N (default: 5) personalized recommendations for user"
+          schema:
+              $ref: "#/definitions/Output"
+          examples:
+            application/json:
+              {"status": true, "data":["5368149","5367976","5367856","5367837","5363691"], "message":}
+        202:
+          description: "Return N (default: 5) similar articles for article"
+          schema:
+              $ref: "#/definitions/Output"
+          examples:
+            application/json:
+              {"status": true, "data":["6236544","6542312","6784235","5987451","5367819"], "message":}
+        213:
+          description: ClientId and article_edition_id are not known
+          schema:
+              $ref: "#/definitions/Output"
+          examples:
+            application/json:
+              {"status": false, "data":, "message":"Unknown clientId and article_edition_id"}
+        400:
+          description: Input is not json
+        404:
+          description: Unknown request
+          schema:
+              $ref: "#/definitions/Output"
+          examples:
+            application/json:
+              {"status": false, "data":, "message":"Unknown request"}
+
+  /modelinfo:
+    get:
+      tags:
+      - "admin"
+      summary: "Return recommender model information"
+      description: "Provide useful information about recommendattion model: alghoritm, version, bumber of known users and items, etc."
+      responses:
+        200:
+          description: "model information"
+          schema:
+            type: "string"
+            example: "model implicit.als.AlternatingLeastSquares;version 1618897641;interactions 112939;users 7172;items 1154"
+
+  /getusers/{num}:
+    get:
+      tags:
+      - "admin"
+      summary: "Return list of known clientId's"
+      parameters:
+      - in: path
+        name: num
+        type: integer
+        minimum: 1
+        required: true
+        description: "Number of elements returned"
+      responses:
+        200:
+          description: "list of known clientId's"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+            example: ["1613050365.1544807279","1237295282.1602949108","140568754.1525266591","30600303.1525683681","1079937873.1593359501"]
+
+
+  /getitems/{num}:
+    get:
+      tags:
+      - "admin"
+      summary: "Return list of known article_edition_id's"
+      parameters:
+      - in: path
+        name: num
+        type: integer
+        minimum: 1
+        required: true
+        description: "Number of elements returned"
+      responses:
+        200:
+          description: "list of known article_edition_id's"
+          schema:
+            type: "array"
+            items:
+              type: "string"
+            example: ["6236544","6542312","6784235","5987451","5367819"]
+
+
+definitions:
+  Input:
+    type: object
+    required:
+      - clientId
+      - article_edition_id
+    properties:
+      clientId:
+        type: string
+        example: "348481929.1586717466"
+      article_edition_id:
+        type: string
+        example: "4919736"
+
+  Output:
+    type: "object"
+    properties:
+      status:
+        type: "boolean"
+      data:
+        type: "array"
+        items:
+          type: "string"
+      message:
+        type: "string"
